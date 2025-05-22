@@ -67,7 +67,7 @@ function create() {
 
   player = this.physics.add.sprite(width / 2, height - 100 * baseScale, 'samsam');
   player.setCollideWorldBounds(true);
-  player.setScale(baseScale * 0.03);
+  player.setScale(baseScale * 0.04);
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
@@ -94,7 +94,7 @@ function create() {
   nightmares = this.physics.add.group();
   for (let i = 0; i < 3; i++) {
     const nm = nightmares.create(width * 0.15 + i * width * 0.15, -200 * baseScale, 'deathcandle');
-    nm.setScale(baseScale * 0.03);
+    nm.setScale(baseScale * 0.04);
     nm.setVisible(false);
     nm.body.enable = false;
     nm.body.velocity.x = 0;
