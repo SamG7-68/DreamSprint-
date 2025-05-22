@@ -115,46 +115,42 @@ function create() {
     fill: '#ffffff',
   });
 
+  // Inside create():
+
   startText = this.add.text(width / 2, height / 2, 'CLICK TO START', {
     fontSize: Math.floor(24 * baseScale) + 'px',
     fill: '#ffffff',
   }).setOrigin(0.5);
 
-  endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setVisible(false);
+  // Initially game not started
+  gameStarted = false;
 
-  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', {
-    fontSize: Math.floor(48 * baseScale) + 'px',
-    fill: '#ff0000',
-    fontStyle: 'bold',
-  }).setOrigin(0.5).setVisible(false);
+  const self = this;
 
-  restartText = this.add.text(width / 2, height / 2 + 50 * baseScale, 'Click to Restart', {
-    fontSize: Math.floor(24 * baseScale) + 'px',
-    fill: '#ffffff',
-  }).setOrigin(0.5).setVisible(false);
+  startText.setInteractive();
+  startText.on('pointerdown', async () => {
+    startText.setVisible(false);
 
-  // Request permission on iOS devices before adding device orientation listener
-  function setupDeviceOrientation() {
+    // Request motion permission for iOS
     if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission()
-        .then((response) => {
-          if (response === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation);
-          } else {
-            console.warn('DeviceMotion permission denied.');
-          }
-        })
-        .catch(console.error);
+      try {
+        const response = await DeviceMotionEvent.requestPermission();
+        if (response === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation);
+        } else {
+          console.warn('DeviceMotion permission denied, using keyboard fallback');
+        }
+      } catch (error) {
+        console.error('Error requesting DeviceMotion permission:', error);
+      }
     } else {
-      // Non iOS or permission not required
+      // Not iOS or no permission needed
       window.addEventListener('deviceorientation', handleOrientation);
     }
-  }
 
-  this.input.once('pointerdown', () => {
-    startGame.call(this);
-    setupDeviceOrientation();
+    startGame.call(self);
   });
+
 }
 
 function handleOrientation(event) {
