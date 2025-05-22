@@ -30,6 +30,7 @@ let startText;
 let gameOverText;
 let restartText;
 let endGameOverlay;
+let background;
 
 let gameStarted = false;
 
@@ -56,7 +57,6 @@ function create() {
   const height = this.sys.game.config.height;
 
   // Background tile sprite covers whole screen
-  this.add.tileSprite(0, 0, width, height, 'bg').setOrigin(0, 0);
   background = this.add.tileSprite(0, 0, width, height, 'bg').setOrigin(0, 0);
 
   // Base scale relative to original 800x600 design
@@ -115,12 +115,34 @@ function create() {
     fill: '#ffffff',
   });
 
-  // Inside create():
-
   startText = this.add.text(width / 2, height / 2, 'CLICK TO START', {
     fontSize: Math.floor(24 * baseScale) + 'px',
     fill: '#ffffff',
   }).setOrigin(0.5);
+
+  // Create end game overlay (semi-transparent black rectangle)
+  endGameOverlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.6).setOrigin(0, 0);
+  endGameOverlay.setVisible(false);
+
+  // Game over text
+  gameOverText = this.add.text(width / 2, height / 2 - 40, 'GAME OVER', {
+    fontSize: Math.floor(48 * baseScale) + 'px',
+    fill: '#ff0000',
+    fontStyle: 'bold',
+  }).setOrigin(0.5);
+  gameOverText.setVisible(false);
+
+  // Restart text
+  restartText = this.add.text(width / 2, height / 2 + 40, 'CLICK TO RESTART', {
+    fontSize: Math.floor(24 * baseScale) + 'px',
+    fill: '#ffffff',
+  }).setOrigin(0.5);
+  restartText.setVisible(false);
+  restartText.setInteractive();
+
+  restartText.on('pointerdown', () => {
+    startGame.call(this);
+  });
 
   // Initially game not started
   gameStarted = false;
@@ -150,21 +172,15 @@ function create() {
 
     startGame.call(self);
   });
-
 }
 
 function handleOrientation(event) {
-  // Normalize gamma (left-right tilt) from -90..90 to -1..1, clamp for stability
   tiltX = Phaser.Math.Clamp(event.gamma / 30, -1, 1);
-
-  // Normalize beta (front-back tilt) from -180..180 to -1..1, clamp for stability
-  // Invert tiltY to match intuitive up/down controls
   tiltY = Phaser.Math.Clamp(-event.beta / 30, -1, 1);
 }
 
 function startGame() {
   gameStarted = true;
-  startText.setVisible(false);
 
   player.setActive(true).setVisible(true);
   player.body.enable = true;
@@ -181,6 +197,7 @@ function startGame() {
   lives = 3;
   scoreText.setText('Score: 0');
   livesText.setText('Lives: 3');
+
   gameOverText.setVisible(false);
   restartText.setVisible(false);
   endGameOverlay.setVisible(false);
@@ -192,6 +209,7 @@ function update() {
   const width = this.sys.game.config.width;
   const height = this.sys.game.config.height;
 
+  // Scroll background down slowly
   background.tilePositionY -= 1;
 
   const baseSpeed = 300 * Math.min(width / 800, height / 600);
@@ -199,12 +217,10 @@ function update() {
   let vx = 0;
   let vy = 0;
 
-  // Use device orientation tilt values if available (non-zero)
   if (Math.abs(tiltX) > 0.05 || Math.abs(tiltY) > 0.05) {
     vx = baseSpeed * tiltX;
     vy = baseSpeed * tiltY;
   } else if (cursors) {
-    // fallback to keyboard arrows if no tilt input
     if (cursors.left.isDown) {
       vx = -baseSpeed;
       player.setFlipX(true);
@@ -220,7 +236,6 @@ function update() {
     }
   }
 
-  // Flip player sprite horizontally for tilt controls as well
   if (vx < 0) {
     player.setFlipX(true);
   } else if (vx > 0) {
@@ -229,7 +244,7 @@ function update() {
 
   player.setVelocity(vx, vy);
 
-  // Recycle orbs when off screen
+  // Recycle orbs off screen
   orbs.children.iterate((orb) => {
     if (orb.y > height) {
       orb.y = 0;
@@ -237,7 +252,7 @@ function update() {
     }
   });
 
-  // Recycle nightmares when off screen
+  // Recycle nightmares off screen
   nightmares.children.iterate((orb) => {
     if (orb.y > height) {
       orb.y = -50;
@@ -247,13 +262,34 @@ function update() {
 }
 
 function collectOrb(player, orb) {
+  const width = game.config.width;
+
   orb.y = 0;
-  orb.x = Phaser.Math.Between(50, game.config.width - 50);
+  orb.x = Phaser.Math.Between(50, width - 50);
 
   score += 1;
   scoreText.setText('Score: ' + score);
+}
 
-  // Evolution logic here (if any)
+function hitNightmare(player, nightmare) {
+  const width = game.config.width;
+
+  nightmare.y = -50;
+  nightmare.x = Phaser.Math.Between(50, width - 50);
+
+  score = Math.max(score - 1, 0);
+  lives -= 1;
+  scoreText.setText('Score: ' + score);
+  livesText.setText('Lives: ' + lives);
+
+  player.setTint(0xff0000);
+  setTimeout(() => {
+    player.clearTint();
+  }, 200);
+
+  if (lives <= 0) {
+    endGame.call(this);
+  }
 }
 
 function endGame() {
@@ -279,27 +315,4 @@ function endGame() {
   gameOverText.setVisible(true);
   restartText.setVisible(true);
   endGameOverlay.setVisible(true);
-
-  this.input.once('pointerdown', () => {
-    startGame.call(this);
-  });
-}
-
-function hitNightmare(player, nightmare) {
-  nightmare.y = -50;
-  nightmare.x = Phaser.Math.Between(50, game.config.width - 50);
-
-  score = Math.max(score - 1, 0);
-  lives -= 1;
-  scoreText.setText('Score: ' + score);
-  livesText.setText('Lives: ' + lives);
-
-  player.setTint(0xff0000);
-  setTimeout(() => {
-    player.clearTint();
-  }, 200);
-
-  if (lives <= 0) {
-    endGame.call(this);
-  }
 }
