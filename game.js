@@ -148,11 +148,12 @@ function startGame() {
     nm.body.enable = true;
   });
 
-  // Reset score, lives, text visibility
+  // Reset score and lives here only
   score = 0;
   lives = 3;
   scoreText.setText('Score: 0').setVisible(true);
   livesText.setText('Lives: 3').setVisible(true);
+
   gameOverText.setVisible(false);
   restartText.setVisible(false);
   endGameOverlay.setVisible(false);
@@ -163,11 +164,13 @@ function startGame() {
   const baseScaleX = width / 800;
   const baseScaleY = height / 600;
   const baseScale = Math.min(baseScaleX, baseScaleY);
+
   player.x = width / 2;
   player.y = height - 100 * baseScale;
   targetX = player.x;
   targetY = player.y;
 }
+
 
 
 function update() {
@@ -232,37 +235,41 @@ function endGame() {
   this.backArrow.setVisible(true);
   this.backArrow.once('pointerdown', () => {
     gameStarted = false;
-
-    // Hide player and disable physics body
-    player.setVisible(false).setActive(false);
+  
+    // Hide player and disable physics to "pause"
+    player.setVisible(false);
     player.body.enable = false;
-
-    // Hide orbs and nightmares and disable physics bodies
+  
+    // Hide orbs and disable physics bodies
     orbs.children.iterate(orb => {
       orb.setVisible(false);
-      orb.setActive(false);
       orb.body.enable = false;
     });
+  
     nightmares.children.iterate(nm => {
       nm.setVisible(false);
-      nm.setActive(false);
       nm.body.enable = false;
     });
-
-    // Hide UI texts
-    scoreText.setVisible(false);
-    livesText.setVisible(false);
-
-    // Hide game over UI
-    gameOverText.setVisible(false);
-    restartText.setVisible(false);
-    this.backArrow.setVisible(false);
-
-    // Show start menu (overlay and start button)
+  
+    // Show start menu UI
     endGameOverlay.setVisible(true);
     document.getElementById('startButton').style.display = 'block';
+  
+    // Hide game over and restart texts
+    gameOverText.setVisible(false);
+    restartText.setVisible(false);
+  
+    // Hide back arrow
+    this.backArrow.setVisible(false);
+  
+    // Keep scoreText and livesText visible or hidden based on preference
+    // For example, you can keep them visible:
+    // scoreText.setVisible(true);
+    // livesText.setVisible(true);
   });
+  
 
+   
 
 
   this.input.once('pointerdown', () => startGame.call(this));
