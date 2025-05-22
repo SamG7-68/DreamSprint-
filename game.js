@@ -67,7 +67,7 @@ function create() {
 
   player = this.physics.add.sprite(width / 2, height - 100 * baseScale, 'samsam');
   player.setCollideWorldBounds(true);
-  player.setScale(baseScale * 0.04);
+  player.setScale(baseScale * 0.03);
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
@@ -94,7 +94,7 @@ function create() {
   nightmares = this.physics.add.group();
   for (let i = 0; i < 3; i++) {
     const nm = nightmares.create(width * 0.15 + i * width * 0.15, -200 * baseScale, 'deathcandle');
-    nm.setScale(baseScale * 0.04);
+    nm.setScale(baseScale * 0.03);
     nm.setVisible(false);
     nm.body.enable = false;
     nm.body.velocity.x = 0;
@@ -131,12 +131,28 @@ function create() {
   const arrowSize = 100 * baseScale;
   this.backArrow = this.add.image(width - arrowSize * 1.5, arrowSize * 1.5, 'arrow')
     .setScale(baseScale * 0.05)
-    .setInteractive()
+    .setInteractive({ useHandCursor: true })
     .setVisible(false)
     .setScrollFactor(0)
     .setDepth(21);
 
+  // Back Arrow button pointer interactions for button-like feedback
   this.backArrow.on('pointerdown', () => {
+    this.backArrow.setScale(this.backArrow.scale * 0.9);
+    this.backArrow.setTint(0xaaaaaa);
+  });
+  this.backArrow.on('pointerup', () => {
+    this.backArrow.setScale(this.backArrow.scale / 0.9);
+    this.backArrow.clearTint();
+    // Call existing back-arrow click handler
+    this.backArrow.emit('clicked');
+  });
+  this.backArrow.on('pointerout', () => {
+    this.backArrow.setScale(this.backArrow.scale / 0.9);
+    this.backArrow.clearTint();
+  });
+
+  this.backArrow.on('clicked', () => {
     endGameOverlay.setVisible(false);
     gameOverText.setVisible(false);
     this.backArrow.setVisible(false);
@@ -174,7 +190,7 @@ function create() {
     .setDepth(10);
 
   // Game over text - bring to front (depth 20)
-  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'SORRY, YOU GOT RUGGED!', {
+  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', {
     fontSize: Math.floor(48 * baseScale) + 'px',
     fill: '#ff0000',
     fontStyle: 'bold',
@@ -187,7 +203,7 @@ function create() {
   restartImage.style.position = 'fixed';
   restartImage.style.left = '50%';
   restartImage.style.top = '60%';
-  restartImage.style.transform = 'translate(-50%, -50%)';
+  restartImage.style.transform = 'translate(-50%, -50%) scale(1)';
   restartImage.style.cursor = 'pointer';
   restartImage.style.display = 'none';
   restartImage.style.zIndex = '100000';  // very high z index to be in front
@@ -195,13 +211,23 @@ function create() {
   restartImage.style.userSelect = 'none';
   document.body.appendChild(restartImage);
 
-  restartImage.onclick = () => {
+  // Restart image button press feedback
+  restartImage.addEventListener('mousedown', () => {
+    restartImage.style.transform = 'translate(-50%, -50%) scale(0.9)';
+  });
+  restartImage.addEventListener('mouseup', () => {
+    restartImage.style.transform = 'translate(-50%, -50%) scale(1)';
+  });
+  restartImage.addEventListener('mouseout', () => {
+    restartImage.style.transform = 'translate(-50%, -50%) scale(1)';
+  });
+  restartImage.addEventListener('click', () => {
     restartImage.style.display = 'none';
     startGame.call(this);
 
     // Make sure overlay is hidden on restart as well
     overlay.style.display = 'none';
-  };
+  });
 }
 
 function startGame() {
@@ -296,7 +322,7 @@ function update(time, delta) {
 
   nightmares.children.iterate(nm => {
     if (!speedIncreasedAt20s && gameElapsedTime >= 20000) {
-      nightmareSpeedMultiplier *= 2;
+      nightmareSpeedMultiplier *= 1.5;
       nightmares.children.iterate(nm2 => {
         nm2.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
         if (nm2.body.velocity.x !== 0) {
@@ -351,7 +377,7 @@ function update(time, delta) {
   if (difficultyTimer > difficultyIncreaseInterval) {
     difficultyTimer = 0;
 
-    orbSpeedMultiplier += 0.2;
+    orbSpeedMultiplier += 0.1;
 
     nightmareSpawnRate = Math.min(nightmareSpawnRate + 0.2, 3);
 
