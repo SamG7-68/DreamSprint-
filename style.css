@@ -1,59 +1,51 @@
-body {
-    margin: 0;
-    overflow: hidden;
-    background: #000;
-    font-family: 'Arial', sans-serif;
+/* Fullscreen overlay to dim the screen */
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    opacity: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.5s ease;
   }
   
+  /* Start button as image */
   #startButton {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 1em 2em;
-    font-size: 1.5em;
-    background-color: #4444aa;
-    color: white;
-    border: none;
-    border-radius: 10px;
+    width: 200px;
     cursor: pointer;
-    z-index: 10;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.3s ease;
+    user-select: none;
+    transition: transform 0.1s ease;
+    z-index: 1001;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
   }
   
-  #startButton:hover {
-    background-color: #5555dd;
+  /* Pressed effect */
+  #startButton:active {
+    transform: scale(0.95);
+    filter: brightness(0.8);
   }
-
+  
+  /* Restart button styling */
   #restartButton {
-    position: absolute;
-    top: 60%; /* a bit below the start button */
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 1em 2em;
-    font-size: 1.3em;
-    background-color: #aa4444;
-    color: white;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    font-size: 18px;
     border: none;
-    border-radius: 10px;
+    background-color: #ff0000;
+    color: white;
+    border-radius: 8px;
     cursor: pointer;
-    z-index: 10;
-    box-shadow: 0 4px 12px rgba(170, 68, 68, 0.7);
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    outline: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    user-select: none;
+    z-index: 1001;
+    display: none;
   }
-  
-  #restartButton:hover,
-  #restartButton:focus {
-    background-color: #dd5555;
-    box-shadow: 0 6px 16px rgba(221, 85, 85, 0.9);
-  }
-  
-  #restartButton:active {
-    background-color: #993333;
-    box-shadow: 0 2px 6px rgba(153, 51, 51, 0.8);
-    transform: translate(-50%, -50%) scale(0.98);
-  }
-  
   

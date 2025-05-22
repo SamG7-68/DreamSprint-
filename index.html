@@ -2,67 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Nightmare Collector</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Phaser Game</title>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-    }
-    #startButton {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 1em 2em;
-      font-size: 1.5em;
-      background-color: #4444aa;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      z-index: 10;
-    }
+    /* Fullscreen overlay to dim the screen */
     #overlay {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.8);
-      transition: opacity 1s ease;
-      z-index: 5;
-    }
-    #restartButton {
-      display: none;
-      position: absolute;
-      left: 50%;
-      top: 60%;
-      transform: translate(-50%, -50%);
-      font-size: 1.5em;
-      padding: 0.75em 2em;
-      cursor: pointer;
+      background-color: rgba(0, 0, 0, 0.7);
+      opacity: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       z-index: 1000;
-      background-color: #4444aa;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      user-select: none;
-      transition: background-color 0.3s ease;
+      transition: opacity 0.5s ease;
     }
-    #restartButton:hover {
-      background-color: #6666cc;
+
+    /* Start button as image */
+    #startButton {
+      width: 200px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease;
+      z-index: 1001;
+      border-radius: 50px;
+      box-shadow: 0px 0px rgba(0,0,0,0.3);
+    }
+
+    /* Pressed effect */
+    #startButton:active {
+      transform: scale(0.95);
+      filter: brightness(0.8);
+    }
+
+    /* Restart button styling */
+    #restartButton {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      background-color: #ff0000;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      user-select: none;
+      z-index: 1001;
+      display: none;
     }
   </style>
-  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="overlay"></div>
-  <button id="startButton">Start Game</button>
+  <!-- Phaser game canvas will be injected here automatically -->
+
+  <!-- Overlay that dims the screen behind the buttons -->
+  <div id="overlay">
+    <!-- Start button as clickable image -->
+    <img id="startButton" src="assets/start-button.png" alt="Start Game" />
+  </div>
+
+  <!-- Restart button hidden initially -->
   <button id="restartButton">Restart</button>
 
+  <!-- Phaser and your game JS scripts -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
-  <script src="game.js"></script>
+  <script src="game.js"></script> <!-- Make sure your JS code is saved here -->
 </body>
 </html>
