@@ -276,7 +276,7 @@ function endGame() {
     startButton.style.display = 'block';
   });
 
-  this.input.once('pointerdown', () => startGame.call(this));
+ 
 }
 
 function hitNightmare(player, nightmare) {
