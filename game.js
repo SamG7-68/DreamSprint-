@@ -25,16 +25,20 @@ let gameOverText, endGameOverlay;
 let background;
 let targetX, targetY;
 let gameStarted = false;
-let startButton, overlay, restartButton;
+let startButton, overlay, restartImage;
 
-// Difficulty scaling variables
+// Difficulty variables
 let orbBaseSpeed;
 let nightmareBaseSpeed;
-let difficultyTimer = 0; // counts elapsed time to increase difficulty
-let difficultyIncreaseInterval = 10000; // every 10 seconds increase difficulty
+let difficultyTimer = 0;
+let difficultyIncreaseInterval = 10000;
 let orbSpeedMultiplier = 1;
 let nightmareSpeedMultiplier = 1;
-let nightmareSpawnRate = 1; // multiplier for number of nightmares
+let nightmareSpawnRate = 1;
+
+let gameElapsedTime = 0;
+let diagonalMotionStarted = false;
+let speedIncreasedAt20s = false;
 
 const game = new Phaser.Game(config);
 
@@ -49,6 +53,7 @@ function preload() {
   this.load.image('godcandle', 'assets/godcandle.png');
   this.load.image('arrow', 'assets/arrow.png');
   this.load.image('startButton', 'assets/start-button.png');
+  this.load.image('restartButtonImage', 'assets/restart.png'); // preload restart image
 }
 
 function create() {
@@ -87,13 +92,13 @@ function create() {
   });
 
   nightmares = this.physics.add.group();
-  // Initial nightmares
   for (let i = 0; i < 3; i++) {
     const nm = nightmares.create(width * 0.15 + i * width * 0.15, -200 * baseScale, 'deathcandle');
-    nm.setVelocityY(nightmareBaseSpeed);
     nm.setScale(baseScale * 0.03);
     nm.setVisible(false);
     nm.body.enable = false;
+    nm.body.velocity.x = 0;
+    nm.body.velocity.y = nightmareBaseSpeed;
   }
 
   this.physics.add.overlap(player, orbs, collectOrb, null, this);
@@ -104,20 +109,15 @@ function create() {
   livesText = this.add.text(16 * baseScale, 40 * baseScale, `Lives: ${lives}`, { fontSize, fill: '#fff' });
   highScoreText = this.add.text(16 * baseScale, 64 * baseScale, `High Score: ${highScore}`, { fontSize, fill: '#fff' });
 
-  // Hide score and lives until game starts
   scoreText.setVisible(false);
   livesText.setVisible(false);
 
-  // Grab UI elements from DOM
   startButton = document.getElementById('startButton');
   overlay = document.getElementById('overlay');
-  restartButton = document.getElementById('restartButton');
 
-  // Show start button and overlay initially
   startButton.style.display = 'block';
   overlay.style.display = 'flex';
   overlay.style.opacity = '1';
-  restartButton.style.display = 'none';
 
   startButton.onclick = () => {
     startButton.style.display = 'none';
@@ -137,7 +137,6 @@ function create() {
     .setDepth(21);
 
   this.backArrow.on('pointerdown', () => {
-    // Return to start screen
     endGameOverlay.setVisible(false);
     gameOverText.setVisible(false);
     this.backArrow.setVisible(false);
@@ -146,12 +145,17 @@ function create() {
 
     overlay.style.display = 'flex';
     overlay.style.opacity = '1';
-    restartButton.style.display = 'none';
     startButton.style.display = 'block';
     gameStarted = false;
+    gameElapsedTime = 0;
+    diagonalMotionStarted = false;
+    speedIncreasedAt20s = false;
+
+    if (restartImage) {
+      restartImage.style.display = "none";
+    }
   });
 
-  // Pointer input moves target position for player
   this.input.on('pointermove', pointer => {
     if (!gameStarted) return;
     targetX = Phaser.Math.Clamp(pointer.x, player.displayWidth / 2, width - player.displayWidth / 2);
@@ -164,22 +168,39 @@ function create() {
     targetY = Phaser.Math.Clamp(pointer.y, player.displayHeight / 2, height - player.displayHeight / 2);
   });
 
-  // End game overlay and text
   endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4)
     .setAlpha(0)
     .setVisible(false)
     .setDepth(10);
 
-  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', {
+  // Game over text - bring to front (depth 20)
+  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'SORRY, YOU GOT RUGGED!', {
     fontSize: Math.floor(48 * baseScale) + 'px',
     fill: '#ff0000',
     fontStyle: 'bold',
   }).setOrigin(0.5).setAlpha(0).setVisible(false).setDepth(20);
 
-  restartButton.onclick = () => {
-    restartButton.style.display = 'none';
-    overlay.style.display = 'none';
+  // Create restart image button centered but initially hidden
+  restartImage = document.createElement('img');
+  restartImage.src = 'assets/restart.png';
+  restartImage.id = 'restartButtonImage';
+  restartImage.style.position = 'fixed';
+  restartImage.style.left = '50%';
+  restartImage.style.top = '60%';
+  restartImage.style.transform = 'translate(-50%, -50%)';
+  restartImage.style.cursor = 'pointer';
+  restartImage.style.display = 'none';
+  restartImage.style.zIndex = '100000';  // very high z index to be in front
+  restartImage.style.width = '150px';
+  restartImage.style.userSelect = 'none';
+  document.body.appendChild(restartImage);
+
+  restartImage.onclick = () => {
+    restartImage.style.display = 'none';
     startGame.call(this);
+
+    // Make sure overlay is hidden on restart as well
+    overlay.style.display = 'none';
   };
 }
 
@@ -195,11 +216,13 @@ function startGame() {
   player.setActive(true).setVisible(true);
   player.body.enable = true;
 
-  // Reset difficulty multipliers
   orbSpeedMultiplier = 1;
   nightmareSpeedMultiplier = 1;
   nightmareSpawnRate = 1;
   difficultyTimer = 0;
+  gameElapsedTime = 0;
+  diagonalMotionStarted = false;
+  speedIncreasedAt20s = false;
 
   orbs.children.iterate(orb => {
     orb.setActive(true);
@@ -210,7 +233,6 @@ function startGame() {
     orb.setVelocityY(orbBaseSpeed * orbSpeedMultiplier);
   });
 
-  // Clear and recreate nightmares according to spawn rate
   nightmares.clear(true, true);
   const nightmareCount = Math.floor(3 * nightmareSpawnRate);
   for (let i = 0; i < nightmareCount; i++) {
@@ -219,7 +241,8 @@ function startGame() {
     nm.setActive(true);
     nm.setVisible(true);
     nm.body.enable = true;
-    nm.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
+    nm.body.velocity.x = 0;
+    nm.body.velocity.y = nightmareBaseSpeed * nightmareSpeedMultiplier;
   }
 
   score = 0;
@@ -236,9 +259,13 @@ function startGame() {
   targetX = player.x;
   targetY = player.y;
 
-  // Hide overlay and restart button
+  // Hide DOM overlay on game start
   overlay.style.display = 'none';
-  restartButton.style.display = 'none';
+
+  if (restartImage) {
+    restartImage.style.display = 'none';
+  }
+
   startButton.style.display = 'none';
 }
 
@@ -246,6 +273,8 @@ function update(time, delta) {
   if (!gameStarted) return;
 
   background.tilePositionY -= 1;
+
+  gameElapsedTime += delta;
 
   const speed = 300;
   this.physics.moveTo(player, targetX, targetY, speed);
@@ -266,26 +295,66 @@ function update(time, delta) {
   });
 
   nightmares.children.iterate(nm => {
+    if (!speedIncreasedAt20s && gameElapsedTime >= 20000) {
+      nightmareSpeedMultiplier *= 1.5;
+      nightmares.children.iterate(nm2 => {
+        nm2.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
+        if (nm2.body.velocity.x !== 0) {
+          const signX = Math.sign(nm2.body.velocity.x);
+          nm2.body.velocity.x = signX * Math.abs(nm2.body.velocity.x) * 1.5;
+        }
+      });
+      speedIncreasedAt20s = true;
+    }
+
+    if (!diagonalMotionStarted && gameElapsedTime >= 30000) {
+      diagonalMotionStarted = true;
+      nightmares.children.iterate(nm3 => {
+        const direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
+        const horizontalSpeed = (nightmareBaseSpeed * nightmareSpeedMultiplier) * 0.5;
+        nm3.body.velocity.x = horizontalSpeed * direction;
+        nm3.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
+      });
+    }
+
+    if (nm.body.velocity.y <= 0) {
+      nm.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
+    }
+
+    if (diagonalMotionStarted) {
+      if (nm.x <= nm.displayWidth / 2 && nm.body.velocity.x < 0) {
+        nm.body.velocity.x = -nm.body.velocity.x;
+      } else if (nm.x >= width - nm.displayWidth / 2 && nm.body.velocity.x > 0) {
+        nm.body.velocity.x = -nm.body.velocity.x;
+      }
+    } else {
+      if (nm.body.velocity.x !== 0) {
+        nm.body.velocity.x = 0;
+      }
+    }
+
     if (nm.y > height) {
       nm.y = -50;
       nm.x = Phaser.Math.Between(50, width - 50);
       nm.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
+      if (diagonalMotionStarted) {
+        const direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
+        const horizontalSpeed = (nightmareBaseSpeed * nightmareSpeedMultiplier) * 0.5;
+        nm.body.velocity.x = horizontalSpeed * direction;
+      } else {
+        nm.body.velocity.x = 0;
+      }
     }
   });
 
-  // Increase difficulty over time
   difficultyTimer += delta;
   if (difficultyTimer > difficultyIncreaseInterval) {
     difficultyTimer = 0;
 
-    // Increase speed multipliers slightly
     orbSpeedMultiplier += 0.1;
-    nightmareSpeedMultiplier += 0.15;
 
-    // Increase nightmare spawn rate slowly (max 3x)
     nightmareSpawnRate = Math.min(nightmareSpawnRate + 0.2, 3);
 
-    // Add nightmares if needed according to new spawn rate
     const currentCount = nightmares.getLength();
     const desiredCount = Math.floor(3 * nightmareSpawnRate);
 
@@ -299,11 +368,11 @@ function update(time, delta) {
         nm.setActive(true);
         nm.setVisible(true);
         nm.body.enable = true;
+        nm.body.velocity.x = diagonalMotionStarted ? (nightmareBaseSpeed * nightmareSpeedMultiplier) * 0.5 * (Phaser.Math.Between(0, 1) === 0 ? -1 : 1) : 0;
         nm.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
       }
     }
 
-    // Update speed for all orbs and nightmares
     orbs.children.iterate(orb => {
       orb.setVelocityY(orbBaseSpeed * orbSpeedMultiplier);
     });
@@ -334,6 +403,12 @@ function hitNightmare(player, nightmare) {
   nightmare.x = Phaser.Math.Between(50, this.sys.game.config.width - 50);
   nightmare.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
 
+  if (diagonalMotionStarted) {
+    nightmare.body.velocity.x = (nightmareBaseSpeed * nightmareSpeedMultiplier) * 0.5 * (Phaser.Math.Between(0, 1) === 0 ? -1 : 1);
+  } else {
+    nightmare.body.velocity.x = 0;
+  }
+
   lives--;
   livesText.setText('Lives: ' + lives);
 
@@ -360,14 +435,16 @@ function endGame() {
     nm.body.enable = false;
   });
 
-  // Show end game overlay and text
-  endGameOverlay.setVisible(true).setAlpha(0.5);
+  // Darker overlay for stronger contrast
+  endGameOverlay.setVisible(true).setAlpha(0.85);
   gameOverText.setVisible(true).setAlpha(1);
-
   this.backArrow.setVisible(true);
 
-  // Show restart button and overlay as well
-  overlay.style.display = 'flex';
-  overlay.style.opacity = '1';
-  restartButton.style.display = 'block';
+  // Hide DOM overlay so it doesn't cover Phaser canvas UI elements
+  overlay.style.display = 'none';
+
+  if (restartImage) {
+    restartImage.style.display = 'block';
+  }
 }
+
