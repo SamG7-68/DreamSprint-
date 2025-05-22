@@ -128,9 +128,12 @@ function create() {
   startText = this.add.text(width / 2, height / 2, 'CLICK TO START', {
     fontSize: Math.floor(24 * baseScale) + 'px',
     fill: '#ffffff',
-  }).setOrigin(0.5).setInteractive();
+  })
+    .setOrigin(0.5)
+    .setInteractive({ useHandCursor: true });
 
-  startText.once('pointerdown', () => {
+  // Use 'on' so click event can be fired multiple times (in case you want to restart)
+  startText.on('pointerdown', () => {
     startGame.call(this);
   });
 
@@ -167,6 +170,7 @@ function startGame() {
 
   gameStarted = true;
   startText.setVisible(false);
+  startText.disableInteractive(); // prevent clicks while game is running
 
   player.setActive(true).setVisible(true);
   player.body.enable = true;
@@ -275,10 +279,8 @@ function hitNightmare(player, nightmare) {
   nightmare.y = -50;
   nightmare.x = Phaser.Math.Between(50, game.config.width - 50);
 
-  score = Math.max(score - 1, 0);
   lives -= 1;
-  scoreText.setText('Score: ' + score);
-  livesText.setText('Lives: ' + lives);
+  livesText.setText(`Lives: ${lives}`);
 
   if (lives <= 0) {
     endGame.call(this);
