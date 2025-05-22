@@ -31,6 +31,7 @@ let startText;
 let gameOverText;
 let restartText;
 let endGameOverlay;
+let background;
 
 let gameStarted = false;
 
@@ -124,8 +125,10 @@ function create() {
   }).setOrigin(0.5);
 
   this.input.once('pointerdown', () => {
+    console.log('Game started!');
     startGame.call(this);
   });
+  
 
   // End game overlay and texts
   endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setVisible(false);
