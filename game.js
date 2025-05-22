@@ -196,7 +196,7 @@ function update() {
 
   // Recycle orbs when off screen
   orbs.children.iterate(function (orb) {
-    const scale = 48 / child.width;
+    
     if (orb.y > height) {
       orb.y = 0;
       orb.x = Phaser.Math.Between(50, width - 50);
@@ -205,7 +205,7 @@ function update() {
 
   // Recycle nightmares when off screen
   nightmares.children.iterate(function (orb) {
-    const scale = 48 / child.width;
+    
     if (orb.y > height) {
       orb.y = -50;
       orb.x = Phaser.Math.Between(50, width - 50);
