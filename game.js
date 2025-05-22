@@ -66,7 +66,7 @@ function create() {
   // Player sprite positioned centered bottom
   player = this.physics.add.sprite(width / 2, height - 100 * baseScale, 'samsam');
   player.setCollideWorldBounds(true);
-  player.setScale(baseScale);
+  player.setScale(baseScale * 0.03);
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
