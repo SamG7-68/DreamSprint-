@@ -93,7 +93,7 @@ function create() {
 
   nightmares.children.iterate(function (child) {
     child.setVelocityY(120 * baseScale);
-    child.setScale(baseScale * 0.8);
+    child.setScale(baseScale * 0.03);
     child.body.enable = false;
   });
 
@@ -204,6 +204,7 @@ function update() {
 
   // Recycle nightmares when off screen
   nightmares.children.iterate(function (orb) {
+    const scale = 48 / child.width;
     if (orb.y > height) {
       orb.y = -50;
       orb.x = Phaser.Math.Between(50, width - 50);
