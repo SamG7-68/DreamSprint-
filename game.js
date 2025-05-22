@@ -21,11 +21,11 @@ let player, cursors, orbs, nightmares;
 let score = 0, lives = 3;
 let scoreText, livesText, highScoreText;
 let highScore = localStorage.getItem('highScore') || 0;
-let gameOverText, restartText, endGameOverlay;
+let gameOverText, endGameOverlay;
 let background;
 let targetX, targetY;
 let gameStarted = false;
-let startButton, overlay;
+let startButton, overlay, restartButton;
 
 const game = new Phaser.Game(config);
 
@@ -98,6 +98,8 @@ function create() {
 
   startButton = document.getElementById('startButton');
   overlay = document.getElementById('overlay');
+  restartButton = document.getElementById('restartButton');
+  restartButton.style.display = 'none';
 
   startButton.style.display = 'block';
   overlay.style.opacity = 1;
@@ -117,7 +119,7 @@ function create() {
     .setInteractive()
     .setVisible(false)
     .setScrollFactor(0)
-    .setDepth(100);  // Ensure it's on top of everything
+    .setDepth(100);
 
   this.input.on('pointermove', pointer => {
     if (!gameStarted) return;
@@ -142,10 +144,11 @@ function create() {
     fontStyle: 'bold'
   }).setOrigin(0.5).setAlpha(0).setVisible(false).setDepth(51);
 
-  restartText = this.add.text(width / 2, height / 2 + 50 * baseScale, 'Click to Restart', {
-    fontSize: Math.floor(24 * baseScale) + 'px',
-    fill: '#fff'
-  }).setOrigin(0.5).setAlpha(0).setVisible(false).setDepth(51);
+  restartButton.onclick = () => {
+    restartButton.style.display = 'none';
+    overlay.style.display = 'none';
+    startGame.call(this);
+  };
 }
 
 function startGame() {
@@ -172,7 +175,6 @@ function startGame() {
   livesText.setText('Lives: 3').setVisible(true);
 
   gameOverText.setVisible(false);
-  restartText.setVisible(false);
   endGameOverlay.setVisible(false);
   this.backArrow.setVisible(false);
 
@@ -249,34 +251,25 @@ function endGame() {
   const duration = 1000;
   endGameOverlay.setVisible(true);
   gameOverText.setVisible(true);
-  restartText.setVisible(true);
-
   this.tweens.add({ targets: endGameOverlay, alpha: 0.7, duration, ease: 'Power2' });
   this.tweens.add({ targets: gameOverText, alpha: 1, duration, ease: 'Power2' });
-  this.tweens.add({ targets: restartText, alpha: 1, duration, ease: 'Power2' });
 
   this.backArrow.setVisible(true);
+  restartButton.style.display = 'block';
+  overlay.style.display = 'block';
+  overlay.style.opacity = 1;
 
   this.backArrow.once('pointerdown', () => {
-  
-
-
-  
-
     endGameOverlay.setVisible(false);
     gameOverText.setVisible(false);
-    restartText.setVisible(false);
-
     this.backArrow.setVisible(false);
     scoreText.setVisible(false);
     livesText.setVisible(false);
 
+    restartButton.style.display = 'block';
     overlay.style.display = 'block';
     overlay.style.opacity = 1;
-    startButton.style.display = 'block';
   });
-
- 
 }
 
 function hitNightmare(player, nightmare) {

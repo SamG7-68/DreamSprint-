@@ -34,12 +34,34 @@
       transition: opacity 1s ease;
       z-index: 5;
     }
+    #restartButton {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 60%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5em;
+      padding: 0.75em 2em;
+      cursor: pointer;
+      z-index: 1000;
+      background-color: #4444aa;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    #restartButton:hover {
+      background-color: #6666cc;
+    }
   </style>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="overlay"></div>
   <button id="startButton">Start Game</button>
+  <button id="restartButton">Restart</button>
+
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <script src="game.js"></script>
 </body>
