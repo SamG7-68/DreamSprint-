@@ -18,6 +18,7 @@ const config = {
 };
 
 let player;
+let cursors;
 let orbs;
 let nightmares;
 let score = 0;
@@ -34,16 +35,15 @@ let background;
 
 let gameStarted = false;
 
+// Track target position to move player toward smoothly
+let targetX, targetY;
+
 const game = new Phaser.Game(config);
 
 // Handle window resize to resize game canvas
 window.addEventListener('resize', () => {
   game.scale.resize(window.innerWidth, window.innerHeight);
 });
-
-// Prevent default scrolling on touch for Safari and mobile browsers
-document.body.style.touchAction = 'none'; // CSS equivalent for touch-action: none
-document.body.style.overflow = 'hidden';
 
 function preload() {
   this.load.image('deathcandle', 'assets/deathcandle.png'); // 64x64
@@ -57,8 +57,6 @@ function create() {
   const height = this.sys.game.config.height;
 
   // Background tile sprite covers whole screen
-  this.add.tileSprite(0, 0, width, height, 'bg').setOrigin(0, 0);
-  // Save to variable for scrolling
   background = this.add.tileSprite(0, 0, width, height, 'bg').setOrigin(0, 0);
 
   // Base scale relative to original 800x600 design
@@ -73,6 +71,12 @@ function create() {
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
+  // Initialize target position at player start position
+  targetX = player.x;
+  targetY = player.y;
+
+  cursors = this.input.keyboard.createCursorKeys();
+
   // Create orbs (good)
   orbs = this.physics.add.group({
     key: 'godcandle',
@@ -82,7 +86,7 @@ function create() {
 
   orbs.children.iterate(function (child) {
     child.setVelocityY(100 * baseScale);
-    child.setScale(baseScale*0.03);
+    child.setScale(baseScale * 0.03);
     child.body.enable = false;
   });
 
@@ -126,21 +130,20 @@ function create() {
   }).setOrigin(0.5);
 
   this.input.once('pointerdown', () => {
-    console.log('Game started!');
     startGame.call(this);
   });
 
-  // Add pointermove and touchmove listeners for player follow control
+  // Listen for pointer move (mouse or touch) to update target position
   this.input.on('pointermove', pointer => {
     if (!gameStarted) return;
-    player.x = Phaser.Math.Clamp(pointer.x, player.displayWidth/2, width - player.displayWidth/2);
-    player.y = Phaser.Math.Clamp(pointer.y, player.displayHeight/2, height - player.displayHeight/2);
+    targetX = Phaser.Math.Clamp(pointer.x, player.displayWidth / 2, width - player.displayWidth / 2);
+    targetY = Phaser.Math.Clamp(pointer.y, player.displayHeight / 2, height - player.displayHeight / 2);
   });
 
   this.input.on('touchmove', pointer => {
     if (!gameStarted) return;
-    player.x = Phaser.Math.Clamp(pointer.x, player.displayWidth/2, width - player.displayWidth/2);
-    player.y = Phaser.Math.Clamp(pointer.y, player.displayHeight/2, height - player.displayHeight/2);
+    targetX = Phaser.Math.Clamp(pointer.x, player.displayWidth / 2, width - player.displayWidth / 2);
+    targetY = Phaser.Math.Clamp(pointer.y, player.displayHeight / 2, height - player.displayHeight / 2);
   });
 
   // End game overlay and texts
@@ -180,6 +183,14 @@ function startGame() {
   gameOverText.setVisible(false);
   restartText.setVisible(false);
   endGameOverlay.setVisible(false);
+
+  // Reset player position and target to start bottom center
+  const width = this.sys.game.config.width;
+  const height = this.sys.game.config.height;
+  player.x = width / 2;
+  player.y = height - 100 * Math.min(width / 800, height / 600);
+  targetX = player.x;
+  targetY = player.y;
 }
 
 function update() {
@@ -190,8 +201,14 @@ function update() {
 
   background.tilePositionY -= 1;
 
-  // We don't need keyboard control velocity anymore since player follows touch
-  player.setVelocity(0);
+  // Smoothly move player toward target pointer
+  const speed = 300; // pixels per second (adjust if needed)
+  this.physics.moveTo(player, targetX, targetY, speed);
+
+  // Stop velocity when close enough to target
+  if (Phaser.Math.Distance.Between(player.x, player.y, targetX, targetY) < 4) {
+    player.body.setVelocity(0);
+  }
 
   // Recycle orbs when off screen
   orbs.children.iterate(function (orb) {
@@ -216,8 +233,6 @@ function collectOrb(player, orb) {
 
   score += 1;
   scoreText.setText('Score: ' + score);
-
-  // Evolution logic here (if any)
 }
 
 function endGame() {
