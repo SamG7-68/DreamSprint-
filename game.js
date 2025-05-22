@@ -296,7 +296,7 @@ function update(time, delta) {
 
   nightmares.children.iterate(nm => {
     if (!speedIncreasedAt20s && gameElapsedTime >= 20000) {
-      nightmareSpeedMultiplier *= 1.5;
+      nightmareSpeedMultiplier *= 2;
       nightmares.children.iterate(nm2 => {
         nm2.setVelocityY(nightmareBaseSpeed * nightmareSpeedMultiplier);
         if (nm2.body.velocity.x !== 0) {
@@ -351,7 +351,7 @@ function update(time, delta) {
   if (difficultyTimer > difficultyIncreaseInterval) {
     difficultyTimer = 0;
 
-    orbSpeedMultiplier += 0.1;
+    orbSpeedMultiplier += 0.2;
 
     nightmareSpawnRate = Math.min(nightmareSpawnRate + 0.2, 3);
 
