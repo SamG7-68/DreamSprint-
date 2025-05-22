@@ -258,20 +258,10 @@ function endGame() {
   this.backArrow.setVisible(true);
 
   this.backArrow.once('pointerdown', () => {
-    gameStarted = false;
+  
 
-    player.setVisible(false);
-    player.body.enable = false;
 
-    orbs.children.iterate(orb => {
-      orb.setVisible(false);
-      orb.body.enable = false;
-    });
-
-    nightmares.children.iterate(nm => {
-      nm.setVisible(false);
-      nm.body.enable = false;
-    });
+  
 
     endGameOverlay.setVisible(false);
     gameOverText.setVisible(false);
