@@ -190,7 +190,7 @@ function create() {
     .setDepth(10);
 
   // Game over text - bring to front (depth 20)
-  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', {
+  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'SORRY, YOU GOT RUGGED!', {
     fontSize: Math.floor(48 * baseScale) + 'px',
     fill: '#ff0000',
     fontStyle: 'bold',
