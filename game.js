@@ -39,6 +39,7 @@ function preload() {
   this.load.image('samsam', 'assets/samsam.png');
   this.load.image('godcandle', 'assets/godcandle.png');
   this.load.image('arrow', 'assets/arrow.png');
+  this.load.image('startButton', 'assets/start-button.png');
 }
 
 function create() {
@@ -93,20 +94,24 @@ function create() {
   livesText = this.add.text(16 * baseScale, 40 * baseScale, `Lives: ${lives}`, { fontSize, fill: '#fff' });
   highScoreText = this.add.text(16 * baseScale, 64 * baseScale, `High Score: ${highScore}`, { fontSize, fill: '#fff' });
 
+  // Hide score and lives until game starts
   scoreText.setVisible(false);
   livesText.setVisible(false);
 
+  // Grab UI elements from DOM
   startButton = document.getElementById('startButton');
   overlay = document.getElementById('overlay');
   restartButton = document.getElementById('restartButton');
-  restartButton.style.display = 'none';
 
+  // Show start button and overlay initially
   startButton.style.display = 'block';
-  overlay.style.opacity = 1;
+  overlay.style.display = 'flex';
+  overlay.style.opacity = '1';
+  restartButton.style.display = 'none';
 
   startButton.onclick = () => {
     startButton.style.display = 'none';
-    overlay.style.opacity = 0;
+    overlay.style.opacity = '0';
     setTimeout(() => {
       overlay.style.display = 'none';
       startGame.call(this);
@@ -121,6 +126,22 @@ function create() {
     .setScrollFactor(0)
     .setDepth(21);
 
+  this.backArrow.on('pointerdown', () => {
+    // Return to start screen
+    endGameOverlay.setVisible(false);
+    gameOverText.setVisible(false);
+    this.backArrow.setVisible(false);
+    scoreText.setVisible(false);
+    livesText.setVisible(false);
+
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '1';
+    restartButton.style.display = 'none';
+    startButton.style.display = 'block';
+    gameStarted = false;
+  });
+
+  // Pointer input moves target position for player
   this.input.on('pointermove', pointer => {
     if (!gameStarted) return;
     targetX = Phaser.Math.Clamp(pointer.x, player.displayWidth / 2, width - player.displayWidth / 2);
@@ -133,6 +154,7 @@ function create() {
     targetY = Phaser.Math.Clamp(pointer.y, player.displayHeight / 2, height - player.displayHeight / 2);
   });
 
+  // End game overlay and text
   endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4)
     .setAlpha(0)
     .setVisible(false)
@@ -141,7 +163,7 @@ function create() {
   gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', {
     fontSize: Math.floor(48 * baseScale) + 'px',
     fill: '#ff0000',
-    fontStyle: 'bold'
+    fontStyle: 'bold',
   }).setOrigin(0.5).setAlpha(0).setVisible(false).setDepth(20);
 
   restartButton.onclick = () => {
@@ -154,6 +176,12 @@ function create() {
 function startGame() {
   gameStarted = true;
 
+  const width = this.sys.game.config.width;
+  const height = this.sys.game.config.height;
+  const baseScaleX = width / 800;
+  const baseScaleY = height / 600;
+  const baseScale = Math.min(baseScaleX, baseScaleY);
+
   player.setActive(true).setVisible(true);
   player.body.enable = true;
 
@@ -161,12 +189,16 @@ function startGame() {
     orb.setActive(true);
     orb.setVisible(true);
     orb.body.enable = true;
+    orb.x = Phaser.Math.Between(50, width - 50);
+    orb.y = 0;
   });
 
   nightmares.children.iterate(nm => {
     nm.setActive(true);
     nm.setVisible(true);
     nm.body.enable = true;
+    nm.x = Phaser.Math.Between(50, width - 50);
+    nm.y = -50;
   });
 
   score = 0;
@@ -174,20 +206,19 @@ function startGame() {
   scoreText.setText('Score: 0').setVisible(true);
   livesText.setText('Lives: 3').setVisible(true);
 
-  gameOverText.setVisible(false);
-  endGameOverlay.setVisible(false);
+  gameOverText.setVisible(false).setAlpha(0);
+  endGameOverlay.setVisible(false).setAlpha(0);
   this.backArrow.setVisible(false);
-
-  const width = this.sys.game.config.width;
-  const height = this.sys.game.config.height;
-  const baseScaleX = width / 800;
-  const baseScaleY = height / 600;
-  const baseScale = Math.min(baseScaleX, baseScaleY);
 
   player.x = width / 2;
   player.y = height - 100 * baseScale;
   targetX = player.x;
   targetY = player.y;
+
+  // Hide overlay and restart button
+  overlay.style.display = 'none';
+  restartButton.style.display = 'none';
+  startButton.style.display = 'none';
 }
 
 function update() {
@@ -222,62 +253,55 @@ function update() {
 
 function collectOrb(player, orb) {
   orb.y = 0;
-  orb.x = Phaser.Math.Between(50, game.config.width - 50);
+  orb.x = Phaser.Math.Between(50, this.sys.game.config.width - 50);
   score += 1;
   scoreText.setText('Score: ' + score);
+
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('highScore', highScore);
+    highScoreText.setText('High Score: ' + highScore);
+  }
 }
 
-function endGame() {
+function hitNightmare(player, nightmare) {
+  nightmare.y = -50;
+  nightmare.x = Phaser.Math.Between(50, this.sys.game.config.width - 50);
+  lives -= 1;
+  livesText.setText('Lives: ' + lives);
+
+  if (lives <= 0) {
+    gameOver.call(this);
+  }
+}
+
+function gameOver() {
   gameStarted = false;
+
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
   orbs.children.iterate(orb => {
+    orb.setActive(false);
     orb.setVisible(false);
     orb.body.enable = false;
   });
 
   nightmares.children.iterate(nm => {
+    nm.setActive(false);
     nm.setVisible(false);
     nm.body.enable = false;
   });
 
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem('highScore', highScore);
-    highScoreText.setText(`High Score: ${highScore}`);
-  }
+  const width = this.sys.game.config.width;
+  const height = this.sys.game.config.height;
 
-  const duration = 1000;
-  endGameOverlay.setVisible(true);
-  gameOverText.setVisible(true);
-  this.tweens.add({ targets: endGameOverlay, alpha: 0.7, duration, ease: 'Power2' });
-  this.tweens.add({ targets: gameOverText, alpha: 1, duration, ease: 'Power2' });
+  endGameOverlay.setVisible(true).setAlpha(0.4);
+  gameOverText.setVisible(true).setAlpha(1);
+
+  restartButton.style.display = 'block';
+  overlay.style.display = 'flex';
+  overlay.style.opacity = '1';
 
   this.backArrow.setVisible(true);
-  restartButton.style.display = 'block';
-  overlay.style.display = 'block';
-  overlay.style.opacity = 1;
-
-  this.backArrow.once('pointerdown', () => {
-    endGameOverlay.setVisible(false);
-    gameOverText.setVisible(false);
-    this.backArrow.setVisible(false);
-    scoreText.setVisible(false);
-    livesText.setVisible(false);
-
-    restartButton.style.display = 'block';
-    overlay.style.display = 'block';
-    overlay.style.opacity = 1;
-  });
-}
-
-function hitNightmare(player, nightmare) {
-  nightmare.y = -50;
-  nightmare.x = Phaser.Math.Between(50, game.config.width - 50);
-  lives -= 1;
-  livesText.setText(`Lives: ${lives}`);
-  if (lives <= 0) {
-    endGame.call(this);
-  }
 }
