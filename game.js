@@ -132,32 +132,43 @@ function create() {
 
 function startGame() {
   gameStarted = true;
+
   player.setActive(true).setVisible(true);
   player.body.enable = true;
-  orbs.children.iterate(orb => orb.body.enable = true);
-  nightmares.children.iterate(child => child.body.enable = true);
+
+  orbs.children.iterate(orb => {
+    orb.setActive(true);
+    orb.setVisible(true);
+    orb.body.enable = true;
+  });
+
+  nightmares.children.iterate(nm => {
+    nm.setActive(true);
+    nm.setVisible(true);
+    nm.body.enable = true;
+  });
+
+  // Reset score, lives, text visibility
   score = 0;
   lives = 3;
-  scoreText.setText('Score: 0');
-  livesText.setText('Lives: 3');
+  scoreText.setText('Score: 0').setVisible(true);
+  livesText.setText('Lives: 3').setVisible(true);
   gameOverText.setVisible(false);
   restartText.setVisible(false);
   endGameOverlay.setVisible(false);
-  gameOverText.setAlpha(0);
-  restartText.setAlpha(0);
-  endGameOverlay.setAlpha(0);
+  this.backArrow.setVisible(false);
+
   const width = this.sys.game.config.width;
   const height = this.sys.game.config.height;
-  const baseScale = Math.min(width / 800, height / 600);
+  const baseScaleX = width / 800;
+  const baseScaleY = height / 600;
+  const baseScale = Math.min(baseScaleX, baseScaleY);
   player.x = width / 2;
   player.y = height - 100 * baseScale;
   targetX = player.x;
   targetY = player.y;
-  scoreText.setVisible(true);
-  livesText.setVisible(true);
-  this.backArrow.setVisible(false);
-
 }
+
 
 function update() {
   if (!gameStarted) return;
@@ -220,13 +231,25 @@ function endGame() {
 
   this.backArrow.setVisible(true);
   this.backArrow.once('pointerdown', () => {
-    // Reset game state without starting it
     gameStarted = false;
 
-    // Hide gameplay elements
+    // Hide player and disable physics body
     player.setVisible(false).setActive(false);
-    orbs.children.iterate(orb => orb.setVisible(false).disableBody(true, true));
-    nightmares.children.iterate(nm => nm.setVisible(false).disableBody(true, true));
+    player.body.enable = false;
+
+    // Hide orbs and nightmares and disable physics bodies
+    orbs.children.iterate(orb => {
+      orb.setVisible(false);
+      orb.setActive(false);
+      orb.body.enable = false;
+    });
+    nightmares.children.iterate(nm => {
+      nm.setVisible(false);
+      nm.setActive(false);
+      nm.body.enable = false;
+    });
+
+    // Hide UI texts
     scoreText.setVisible(false);
     livesText.setVisible(false);
 
@@ -235,10 +258,11 @@ function endGame() {
     restartText.setVisible(false);
     this.backArrow.setVisible(false);
 
-    // Show the start menu (overlay stays visible, button reappears)
-    endGameOverlay.setVisible(true); // Keeps the faded background
+    // Show start menu (overlay and start button)
+    endGameOverlay.setVisible(true);
     document.getElementById('startButton').style.display = 'block';
   });
+
 
 
   this.input.once('pointerdown', () => startGame.call(this));
