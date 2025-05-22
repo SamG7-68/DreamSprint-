@@ -18,7 +18,6 @@ const config = {
 };
 
 let player;
-let cursors;
 let orbs;
 let nightmares;
 let score = 0;
@@ -31,13 +30,16 @@ let startText;
 let gameOverText;
 let restartText;
 let endGameOverlay;
-let background;
 
 let gameStarted = false;
 
+let tiltX = 0;  // left-right tilt normalized [-1,1]
+let tiltY = 0;  // front-back tilt normalized [-1,1]
+
+let cursors;
+
 const game = new Phaser.Game(config);
 
-// Handle window resize to resize game canvas
 window.addEventListener('resize', () => {
   game.scale.resize(window.innerWidth, window.innerHeight);
 });
@@ -55,7 +57,6 @@ function create() {
 
   // Background tile sprite covers whole screen
   this.add.tileSprite(0, 0, width, height, 'bg').setOrigin(0, 0);
-  // Save to variable for scrolling
   background = this.add.tileSprite(0, 0, width, height, 'bg').setOrigin(0, 0);
 
   // Base scale relative to original 800x600 design
@@ -63,46 +64,41 @@ function create() {
   const baseScaleY = height / 600;
   const baseScale = Math.min(baseScaleX, baseScaleY);
 
-  // Player sprite positioned centered bottom
   player = this.physics.add.sprite(width / 2, height - 100 * baseScale, 'samsam');
   player.setCollideWorldBounds(true);
-  player.setScale(baseScale * 0.03);
+  player.setScale(baseScale);
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
   cursors = this.input.keyboard.createCursorKeys();
 
-  // Create orbs (good)
   orbs = this.physics.add.group({
     key: 'godcandle',
     repeat: 3,
     setXY: { x: width * 0.1, y: 0, stepX: width * 0.25 },
   });
 
-  orbs.children.iterate(function (child) {
+  orbs.children.iterate((child) => {
     child.setVelocityY(100 * baseScale);
-    child.setScale(baseScale*0.03);
+    child.setScale(baseScale * 0.03);
     child.body.enable = false;
   });
 
-  // Create nightmares (bad)
   nightmares = this.physics.add.group({
     key: 'deathcandle',
     repeat: 2,
     setXY: { x: width * 0.15, y: -200 * baseScale, stepX: width * 0.15 },
   });
 
-  nightmares.children.iterate(function (child) {
+  nightmares.children.iterate((child) => {
     child.setVelocityY(120 * baseScale);
     child.setScale(baseScale * 0.03);
     child.body.enable = false;
   });
 
-  // Add collisions
   this.physics.add.overlap(player, orbs, collectOrb, null, this);
   this.physics.add.overlap(player, nightmares, hitNightmare, null, this);
 
-  // UI texts - fixed positions, scale font size relative to baseScale
   const fontSize = Math.floor(20 * baseScale) + 'px';
   scoreText = this.add.text(16 * baseScale, 16 * baseScale, 'Score: 0', {
     fontSize: fontSize,
@@ -124,13 +120,6 @@ function create() {
     fill: '#ffffff',
   }).setOrigin(0.5);
 
-  this.input.once('pointerdown', () => {
-    console.log('Game started!');
-    startGame.call(this);
-  });
-  
-
-  // End game overlay and texts
   endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setVisible(false);
 
   gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', {
@@ -143,6 +132,38 @@ function create() {
     fontSize: Math.floor(24 * baseScale) + 'px',
     fill: '#ffffff',
   }).setOrigin(0.5).setVisible(false);
+
+  // Request permission on iOS devices before adding device orientation listener
+  function setupDeviceOrientation() {
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission()
+        .then((response) => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation);
+          } else {
+            console.warn('DeviceMotion permission denied.');
+          }
+        })
+        .catch(console.error);
+    } else {
+      // Non iOS or permission not required
+      window.addEventListener('deviceorientation', handleOrientation);
+    }
+  }
+
+  this.input.once('pointerdown', () => {
+    startGame.call(this);
+    setupDeviceOrientation();
+  });
+}
+
+function handleOrientation(event) {
+  // Normalize gamma (left-right tilt) from -90..90 to -1..1, clamp for stability
+  tiltX = Phaser.Math.Clamp(event.gamma / 30, -1, 1);
+
+  // Normalize beta (front-back tilt) from -180..180 to -1..1, clamp for stability
+  // Invert tiltY to match intuitive up/down controls
+  tiltY = Phaser.Math.Clamp(-event.beta / 30, -1, 1);
 }
 
 function startGame() {
@@ -152,11 +173,11 @@ function startGame() {
   player.setActive(true).setVisible(true);
   player.body.enable = true;
 
-  orbs.children.iterate(function (orb) {
+  orbs.children.iterate((orb) => {
     orb.body.enable = true;
   });
 
-  nightmares.children.iterate(function (child) {
+  nightmares.children.iterate((child) => {
     child.body.enable = true;
   });
 
@@ -177,29 +198,43 @@ function update() {
 
   background.tilePositionY -= 1;
 
-  const speed = 300 * Math.min(width / 800, height / 600);
+  const baseSpeed = 300 * Math.min(width / 800, height / 600);
+
   let vx = 0;
   let vy = 0;
 
-  if (cursors.left.isDown) {
-    vx = -speed;
-    player.setFlipX(true);
-  } else if (cursors.right.isDown) {
-    vx = speed;
-    player.setFlipX(false);
+  // Use device orientation tilt values if available (non-zero)
+  if (Math.abs(tiltX) > 0.05 || Math.abs(tiltY) > 0.05) {
+    vx = baseSpeed * tiltX;
+    vy = baseSpeed * tiltY;
+  } else if (cursors) {
+    // fallback to keyboard arrows if no tilt input
+    if (cursors.left.isDown) {
+      vx = -baseSpeed;
+      player.setFlipX(true);
+    } else if (cursors.right.isDown) {
+      vx = baseSpeed;
+      player.setFlipX(false);
+    }
+
+    if (cursors.up.isDown) {
+      vy = -baseSpeed;
+    } else if (cursors.down.isDown) {
+      vy = baseSpeed;
+    }
   }
 
-  if (cursors.up.isDown) {
-    vy = -speed;
-  } else if (cursors.down.isDown) {
-    vy = speed;
+  // Flip player sprite horizontally for tilt controls as well
+  if (vx < 0) {
+    player.setFlipX(true);
+  } else if (vx > 0) {
+    player.setFlipX(false);
   }
 
   player.setVelocity(vx, vy);
 
   // Recycle orbs when off screen
-  orbs.children.iterate(function (orb) {
-    
+  orbs.children.iterate((orb) => {
     if (orb.y > height) {
       orb.y = 0;
       orb.x = Phaser.Math.Between(50, width - 50);
@@ -207,8 +242,7 @@ function update() {
   });
 
   // Recycle nightmares when off screen
-  nightmares.children.iterate(function (orb) {
-    
+  nightmares.children.iterate((orb) => {
     if (orb.y > height) {
       orb.y = -50;
       orb.x = Phaser.Math.Between(50, width - 50);
@@ -232,11 +266,11 @@ function endGame() {
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
-  orbs.children.iterate(function (orb) {
+  orbs.children.iterate((orb) => {
     orb.body.enable = false;
   });
 
-  nightmares.children.iterate(function (child) {
+  nightmares.children.iterate((child) => {
     child.body.enable = false;
   });
 
