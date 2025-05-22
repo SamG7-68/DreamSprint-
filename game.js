@@ -42,7 +42,7 @@ window.addEventListener('resize', () => {
 });
 
 function preload() {
-  this.load.image('deathcandle', 'assets/deathcandle_temp.png'); // 64x64
+  this.load.image('deathcandle', 'assets/deathcandle.png'); // 64x64
   this.load.image('bg', 'assets/background.png');
   this.load.image('samsam', 'assets/samsam.png'); // 64x64
   this.load.image('godcandle', 'assets/godcandle.png'); // 64x64
