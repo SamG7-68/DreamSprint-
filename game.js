@@ -37,6 +37,8 @@ function preload() {
   this.load.image('bg', 'assets/background.png');
   this.load.image('samsam', 'assets/samsam.png');
   this.load.image('godcandle', 'assets/godcandle.png');
+  this.load.image('arrow', 'assets/arrow.png');
+
 }
 
 function create() {
@@ -104,6 +106,13 @@ function create() {
     }, 1000);
   };
 
+  const arrowSize = 40 * baseScale;
+  this.backArrow = this.add.image(width - arrowSize * 1.5, arrowSize * 1.5, 'arrow')
+    .setScale(baseScale * 0.05)
+    .setInteractive()
+    .setVisible(false)
+    .setScrollFactor(0);
+
   this.input.on('pointermove', pointer => {
     if (!gameStarted) return;
     targetX = Phaser.Math.Clamp(pointer.x, player.displayWidth / 2, width - player.displayWidth / 2);
@@ -144,6 +153,10 @@ function startGame() {
   player.y = height - 100 * baseScale;
   targetX = player.x;
   targetY = player.y;
+  scoreText.setVisible(true);
+  livesText.setVisible(true);
+  this.backArrow.setVisible(false);
+
 }
 
 function update() {
@@ -204,6 +217,28 @@ function endGame() {
   this.tweens.add({ targets: endGameOverlay, alpha: 0.7, duration, ease: 'Power2' });
   this.tweens.add({ targets: gameOverText, alpha: 1, duration, ease: 'Power2' });
   this.tweens.add({ targets: restartText, alpha: 1, duration, ease: 'Power2' });
+
+  this.backArrow.setVisible(true);
+  this.backArrow.once('pointerdown', () => {
+    gameStarted = false;
+
+    // Hide game UI
+    player.setVisible(false).setActive(false);
+    orbs.children.iterate(orb => orb.body.enable = false);
+    nightmares.children.iterate(nm => nm.body.enable = false);
+    scoreText.setVisible(false);
+    livesText.setVisible(false);
+
+    // Show start button
+    document.getElementById('startButton').style.display = 'block';
+
+    // Hide overlays
+    gameOverText.setVisible(false);
+    restartText.setVisible(false);
+    endGameOverlay.setVisible(false);
+    this.backArrow.setVisible(false);
+  });
+
 
   this.input.once('pointerdown', () => startGame.call(this));
 }
