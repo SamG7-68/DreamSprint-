@@ -119,7 +119,7 @@ function create() {
     .setInteractive()
     .setVisible(false)
     .setScrollFactor(0)
-    .setDepth(100);
+    .setDepth(21);
 
   this.input.on('pointermove', pointer => {
     if (!gameStarted) return;
@@ -133,16 +133,16 @@ function create() {
     targetY = Phaser.Math.Clamp(pointer.y, player.displayHeight / 2, height - player.displayHeight / 2);
   });
 
-  endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
+  endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4)
     .setAlpha(0)
     .setVisible(false)
-    .setDepth(50);
+    .setDepth(10);
 
   gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', {
     fontSize: Math.floor(48 * baseScale) + 'px',
     fill: '#ff0000',
     fontStyle: 'bold'
-  }).setOrigin(0.5).setAlpha(0).setVisible(false).setDepth(51);
+  }).setOrigin(0.5).setAlpha(0).setVisible(false).setDepth(20);
 
   restartButton.onclick = () => {
     restartButton.style.display = 'none';
