@@ -40,7 +40,7 @@ let targetX, targetY;
 
 const game = new Phaser.Game(config);
 
-// Handle window resize to resize game canvas
+// Handle window resize to resize game canvas only
 window.addEventListener('resize', () => {
   game.scale.resize(window.innerWidth, window.innerHeight);
 });
@@ -67,7 +67,7 @@ function create() {
   // Player sprite positioned centered bottom
   player = this.physics.add.sprite(width / 2, height - 100 * baseScale, 'samsam');
   player.setCollideWorldBounds(true);
-  player.setScale(baseScale * 0.03);
+  player.setScale(baseScale * 0.03);  // Keep fixed scale
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
@@ -86,7 +86,7 @@ function create() {
 
   orbs.children.iterate(function (child) {
     child.setVelocityY(100 * baseScale);
-    child.setScale(baseScale * 0.03);
+    child.setScale(baseScale * 0.03);  // Keep fixed scale
     child.body.enable = false;
   });
 
@@ -99,7 +99,7 @@ function create() {
 
   nightmares.children.iterate(function (child) {
     child.setVelocityY(120 * baseScale);
-    child.setScale(baseScale * 0.03);
+    child.setScale(baseScale * 0.03);  // Keep fixed scale
     child.body.enable = false;
   });
 
@@ -190,8 +190,12 @@ function startGame() {
   // Reset player position and target to start bottom center
   const width = this.sys.game.config.width;
   const height = this.sys.game.config.height;
+  const baseScaleX = width / 800;
+  const baseScaleY = height / 600;
+  const baseScale = Math.min(baseScaleX, baseScaleY);
+
   player.x = width / 2;
-  player.y = height - 100 * Math.min(width / 800, height / 600);
+  player.y = height - 100 * baseScale;
   targetX = player.x;
   targetY = player.y;
 }
