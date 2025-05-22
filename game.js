@@ -25,6 +25,7 @@ let gameOverText, restartText, endGameOverlay;
 let background;
 let targetX, targetY;
 let gameStarted = false;
+let startButton, overlay;
 
 const game = new Phaser.Game(config);
 
@@ -68,8 +69,8 @@ function create() {
   orbs.children.iterate(child => {
     child.setVelocityY(100 * baseScale);
     child.setScale(baseScale * 0.03);
+    child.setVisible(false);
     child.body.enable = false;
-    child.setActive(false).setVisible(false);
   });
 
   nightmares = this.physics.add.group({
@@ -80,20 +81,23 @@ function create() {
   nightmares.children.iterate(child => {
     child.setVelocityY(120 * baseScale);
     child.setScale(baseScale * 0.03);
+    child.setVisible(false);
     child.body.enable = false;
-    child.setActive(false).setVisible(false);
   });
 
   this.physics.add.overlap(player, orbs, collectOrb, null, this);
   this.physics.add.overlap(player, nightmares, hitNightmare, null, this);
 
   const fontSize = Math.floor(20 * baseScale) + 'px';
-  scoreText = this.add.text(16 * baseScale, 16 * baseScale, 'Score: 0', { fontSize, fill: '#fff' }).setVisible(false);
-  livesText = this.add.text(16 * baseScale, 40 * baseScale, `Lives: ${lives}`, { fontSize, fill: '#fff' }).setVisible(false);
+  scoreText = this.add.text(16 * baseScale, 16 * baseScale, 'Score: 0', { fontSize, fill: '#fff' });
+  livesText = this.add.text(16 * baseScale, 40 * baseScale, `Lives: ${lives}`, { fontSize, fill: '#fff' });
   highScoreText = this.add.text(16 * baseScale, 64 * baseScale, `High Score: ${highScore}`, { fontSize, fill: '#fff' });
 
-  const startButton = document.getElementById('startButton');
-  const overlay = document.getElementById('overlay');
+  scoreText.setVisible(false);
+  livesText.setVisible(false);
+
+  startButton = document.getElementById('startButton');
+  overlay = document.getElementById('overlay');
 
   startButton.style.display = 'block';
   overlay.style.opacity = 1;
@@ -112,7 +116,8 @@ function create() {
     .setScale(baseScale * 0.05)
     .setInteractive()
     .setVisible(false)
-    .setScrollFactor(0);
+    .setScrollFactor(0)
+    .setDepth(100);  // Ensure it's on top of everything
 
   this.input.on('pointermove', pointer => {
     if (!gameStarted) return;
@@ -126,9 +131,21 @@ function create() {
     targetY = Phaser.Math.Clamp(pointer.y, player.displayHeight / 2, height - player.displayHeight / 2);
   });
 
-  endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setAlpha(0).setVisible(false);
-  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', { fontSize: Math.floor(48 * baseScale) + 'px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(0).setVisible(false);
-  restartText = this.add.text(width / 2, height / 2 + 50 * baseScale, 'Click to Restart', { fontSize: Math.floor(24 * baseScale) + 'px', fill: '#fff' }).setOrigin(0.5).setAlpha(0).setVisible(false);
+  endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
+    .setAlpha(0)
+    .setVisible(false)
+    .setDepth(50);
+
+  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', {
+    fontSize: Math.floor(48 * baseScale) + 'px',
+    fill: '#ff0000',
+    fontStyle: 'bold'
+  }).setOrigin(0.5).setAlpha(0).setVisible(false).setDepth(51);
+
+  restartText = this.add.text(width / 2, height / 2 + 50 * baseScale, 'Click to Restart', {
+    fontSize: Math.floor(24 * baseScale) + 'px',
+    fill: '#fff'
+  }).setOrigin(0.5).setAlpha(0).setVisible(false).setDepth(51);
 }
 
 function startGame() {
@@ -149,15 +166,14 @@ function startGame() {
     nm.body.enable = true;
   });
 
-  // Reset score and lives here only
   score = 0;
   lives = 3;
   scoreText.setText('Score: 0').setVisible(true);
   livesText.setText('Lives: 3').setVisible(true);
 
-  gameOverText.setVisible(false).setAlpha(0);
-  restartText.setVisible(false).setAlpha(0);
-  endGameOverlay.setVisible(false).setAlpha(0);
+  gameOverText.setVisible(false);
+  restartText.setVisible(false);
+  endGameOverlay.setVisible(false);
   this.backArrow.setVisible(false);
 
   const width = this.sys.game.config.width;
@@ -215,13 +231,13 @@ function endGame() {
   player.body.enable = false;
 
   orbs.children.iterate(orb => {
-    orb.setActive(false).setVisible(false);
+    orb.setVisible(false);
     orb.body.enable = false;
   });
 
-  nightmares.children.iterate(child => {
-    child.setActive(false).setVisible(false);
-    child.body.enable = false;
+  nightmares.children.iterate(nm => {
+    nm.setVisible(false);
+    nm.body.enable = false;
   });
 
   if (score > highScore) {
@@ -240,42 +256,37 @@ function endGame() {
   this.tweens.add({ targets: restartText, alpha: 1, duration, ease: 'Power2' });
 
   this.backArrow.setVisible(true);
+
   this.backArrow.once('pointerdown', () => {
-    // Reset to start menu state
     gameStarted = false;
 
-    player.setActive(false).setVisible(false);
+    player.setVisible(false);
     player.body.enable = false;
 
     orbs.children.iterate(orb => {
-      orb.setActive(false).setVisible(false);
+      orb.setVisible(false);
       orb.body.enable = false;
     });
 
     nightmares.children.iterate(nm => {
-      nm.setActive(false).setVisible(false);
+      nm.setVisible(false);
       nm.body.enable = false;
     });
 
-    endGameOverlay.setVisible(false).setAlpha(0);
-    gameOverText.setVisible(false).setAlpha(0);
-    restartText.setVisible(false).setAlpha(0);
+    endGameOverlay.setVisible(false);
+    gameOverText.setVisible(false);
+    restartText.setVisible(false);
+
     this.backArrow.setVisible(false);
-
-    document.getElementById('startButton').style.display = 'block';
-    document.getElementById('overlay').style.display = 'block';
-    document.getElementById('overlay').style.opacity = 1;
-
     scoreText.setVisible(false);
     livesText.setVisible(false);
+
+    overlay.style.display = 'block';
+    overlay.style.opacity = 1;
+    startButton.style.display = 'block';
   });
 
-  // Allow restart by clicking anywhere on game canvas (optional)
-  this.input.once('pointerdown', () => {
-    if (!gameStarted) {
-      startGame.call(this);
-    }
-  });
+  this.input.once('pointerdown', () => startGame.call(this));
 }
 
 function hitNightmare(player, nightmare) {
