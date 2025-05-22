@@ -4,18 +4,41 @@
     <meta charset="UTF-8" />
     <title>Dream Sprint</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
+
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="style.css" />
     <style>
+      /* fallback style for body, in case CSS file not loaded */
       body {
         margin: 0;
         overflow: hidden;
+        font-family: 'Poppins', sans-serif;
+        background-color: #1a1a40;
       }
-
       canvas {
         display: block;
+        position: relative;
+        z-index: 0;
       }
     </style>
   </head>
+
   <body>
+    <div id="game-container">
+      <!-- Phaser canvas will go here automatically -->
+
+      <!-- Start button overlay -->
+      <button id="start-button" class="game-button">CLICK TO START</button>
+
+      <!-- Game over overlay -->
+      <div id="game-over-overlay" class="overlay hidden">
+        <h1>GAME OVER</h1>
+        <button id="restart-button" class="game-button">Click to Restart</button>
+      </div>
+    </div>
+
     <script src="game.js"></script>
   </body>
 </html>

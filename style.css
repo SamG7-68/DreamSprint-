@@ -1,0 +1,107 @@
+/* Reset and base */
+* {
+    box-sizing: border-box;
+  }
+  
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #1a1a40;
+    font-family: 'Poppins', sans-serif;
+    color: #fff;
+    user-select: none;
+  }
+  
+  /* Container holds canvas and UI overlays */
+  #game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* Phaser canvas styling (automatic) */
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 0;
+  }
+  
+  /* Common button styles */
+  .game-button {
+    font-weight: 700;
+    font-size: 2.5rem;
+    padding: 1rem 3rem;
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(145deg, #4b69a3, #364a7f);
+    box-shadow:
+      4px 4px 6px rgba(0, 0, 0, 0.7),
+      -4px -4px 6px rgba(82, 102, 179, 0.9);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+  }
+  
+  /* Button hover and active effect for pushing */
+  .game-button:hover {
+    background: linear-gradient(145deg, #576bbf, #41539a);
+    box-shadow:
+      6px 6px 8px rgba(0, 0, 0, 0.8),
+      -6px -6px 8px rgba(82, 102, 179, 1);
+  }
+  
+  .game-button:active {
+    background: linear-gradient(145deg, #364a7f, #2a3a6a);
+    box-shadow:
+      inset 2px 2px 4px rgba(0, 0, 0, 0.9),
+      inset -2px -2px 4px rgba(82, 102, 179, 0.8);
+    transform: translateX(-50%) translateY(2px);
+    outline: none;
+  }
+  
+  /* Start button centered vertically and horizontally */
+  #start-button {
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  /* Game Over overlay styling */
+  #game-over-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(26, 26, 64, 0.9);
+    padding: 3rem 4rem;
+    border-radius: 16px;
+    box-shadow:
+      8px 8px 20px rgba(0, 0, 0, 0.7),
+      -8px -8px 20px rgba(82, 102, 179, 0.8);
+    text-align: center;
+    z-index: 15;
+    user-select: none;
+    width: 320px;
+  }
+  
+  /* Hide with helper class */
+  .hidden {
+    display: none !important;
+  }
+  
+  #game-over-overlay h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    color: #ff4c4c;
+    text-shadow: 2px 2px 6px rgba(255, 0, 0, 0.8);
+    user-select: none;
+  }
+  
