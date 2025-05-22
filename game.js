@@ -106,7 +106,7 @@ function create() {
     }, 1000);
   };
 
-  const arrowSize = 40 * baseScale;
+  const arrowSize = 100 * baseScale;
   this.backArrow = this.add.image(width - arrowSize * 1.5, arrowSize * 1.5, 'arrow')
     .setScale(baseScale * 0.05)
     .setInteractive()
@@ -220,23 +220,24 @@ function endGame() {
 
   this.backArrow.setVisible(true);
   this.backArrow.once('pointerdown', () => {
+    // Reset game state without starting it
     gameStarted = false;
 
-    // Hide game UI
+    // Hide gameplay elements
     player.setVisible(false).setActive(false);
-    orbs.children.iterate(orb => orb.body.enable = false);
-    nightmares.children.iterate(nm => nm.body.enable = false);
+    orbs.children.iterate(orb => orb.setVisible(false).disableBody(true, true));
+    nightmares.children.iterate(nm => nm.setVisible(false).disableBody(true, true));
     scoreText.setVisible(false);
     livesText.setVisible(false);
 
-    // Show start button
-    document.getElementById('startButton').style.display = 'block';
-
-    // Hide overlays
+    // Hide game over UI
     gameOverText.setVisible(false);
     restartText.setVisible(false);
-    endGameOverlay.setVisible(false);
     this.backArrow.setVisible(false);
+
+    // Show the start menu (overlay stays visible, button reappears)
+    endGameOverlay.setVisible(true); // Keeps the faded background
+    document.getElementById('startButton').style.display = 'block';
   });
 
 
