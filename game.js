@@ -1,4 +1,3 @@
-// game.js
 const config = {
   type: Phaser.AUTO,
   width: window.innerWidth,
@@ -18,24 +17,14 @@ const config = {
   },
 };
 
-let player;
-let cursors;
-let orbs;
-let nightmares;
-let score = 0;
-let scoreText;
-let lives = 3;
-let livesText;
+let player, cursors, orbs, nightmares;
+let score = 0, lives = 3;
+let scoreText, livesText, highScoreText;
 let highScore = localStorage.getItem('highScore') || 0;
-let highScoreText;
-let gameOverText;
-let restartText;
-let endGameOverlay;
+let gameOverText, restartText, endGameOverlay;
 let background;
-
-let gameStarted = false;
-
 let targetX, targetY;
+let gameStarted = false;
 
 const game = new Phaser.Game(config);
 
@@ -75,7 +64,6 @@ function create() {
     repeat: 3,
     setXY: { x: width * 0.1, y: 0, stepX: width * 0.25 },
   });
-
   orbs.children.iterate(child => {
     child.setVelocityY(100 * baseScale);
     child.setScale(baseScale * 0.03);
@@ -87,7 +75,6 @@ function create() {
     repeat: 2,
     setXY: { x: width * 0.15, y: -200 * baseScale, stepX: width * 0.15 },
   });
-
   nightmares.children.iterate(child => {
     child.setVelocityY(120 * baseScale);
     child.setScale(baseScale * 0.03);
@@ -103,10 +90,18 @@ function create() {
   highScoreText = this.add.text(16 * baseScale, 64 * baseScale, `High Score: ${highScore}`, { fontSize, fill: '#fff' });
 
   const startButton = document.getElementById('startButton');
+  const overlay = document.getElementById('overlay');
+
   startButton.style.display = 'block';
+  overlay.style.opacity = 1;
+
   startButton.onclick = () => {
-    startGame.call(this);
     startButton.style.display = 'none';
+    overlay.style.opacity = 0;
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      startGame.call(this);
+    }, 1000);
   };
 
   this.input.on('pointermove', pointer => {
@@ -121,9 +116,9 @@ function create() {
     targetY = Phaser.Math.Clamp(pointer.y, player.displayHeight / 2, height - player.displayHeight / 2);
   });
 
-  endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setVisible(false);
-  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', { fontSize: Math.floor(48 * baseScale) + 'px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5).setVisible(false);
-  restartText = this.add.text(width / 2, height / 2 + 50 * baseScale, 'Click to Restart', { fontSize: Math.floor(24 * baseScale) + 'px', fill: '#fff' }).setOrigin(0.5).setVisible(false);
+  endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setAlpha(0).setVisible(false);
+  gameOverText = this.add.text(width / 2, height / 2 - 50 * baseScale, 'GAME OVER', { fontSize: Math.floor(48 * baseScale) + 'px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(0).setVisible(false);
+  restartText = this.add.text(width / 2, height / 2 + 50 * baseScale, 'Click to Restart', { fontSize: Math.floor(24 * baseScale) + 'px', fill: '#fff' }).setOrigin(0.5).setAlpha(0).setVisible(false);
 }
 
 function startGame() {
@@ -139,11 +134,12 @@ function startGame() {
   gameOverText.setVisible(false);
   restartText.setVisible(false);
   endGameOverlay.setVisible(false);
+  gameOverText.setAlpha(0);
+  restartText.setAlpha(0);
+  endGameOverlay.setAlpha(0);
   const width = this.sys.game.config.width;
   const height = this.sys.game.config.height;
-  const baseScaleX = width / 800;
-  const baseScaleY = height / 600;
-  const baseScale = Math.min(baseScaleX, baseScaleY);
+  const baseScale = Math.min(width / 800, height / 600);
   player.x = width / 2;
   player.y = height - 100 * baseScale;
   targetX = player.x;
@@ -152,20 +148,26 @@ function startGame() {
 
 function update() {
   if (!gameStarted) return;
-  const width = this.sys.game.config.width;
-  const height = this.sys.game.config.height;
+
   background.tilePositionY -= 1;
+
   const speed = 300;
   this.physics.moveTo(player, targetX, targetY, speed);
+
   if (Phaser.Math.Distance.Between(player.x, player.y, targetX, targetY) < 4) {
     player.body.setVelocity(0);
   }
+
+  const height = this.sys.game.config.height;
+  const width = this.sys.game.config.width;
+
   orbs.children.iterate(orb => {
     if (orb.y > height) {
       orb.y = 0;
       orb.x = Phaser.Math.Between(50, width - 50);
     }
   });
+
   nightmares.children.iterate(orb => {
     if (orb.y > height) {
       orb.y = -50;
@@ -187,14 +189,22 @@ function endGame() {
   player.body.enable = false;
   orbs.children.iterate(orb => orb.body.enable = false);
   nightmares.children.iterate(child => child.body.enable = false);
+
   if (score > highScore) {
     highScore = score;
     localStorage.setItem('highScore', highScore);
     highScoreText.setText(`High Score: ${highScore}`);
   }
+
+  const duration = 1000;
+  endGameOverlay.setVisible(true);
   gameOverText.setVisible(true);
   restartText.setVisible(true);
-  endGameOverlay.setVisible(true);
+
+  this.tweens.add({ targets: endGameOverlay, alpha: 0.7, duration, ease: 'Power2' });
+  this.tweens.add({ targets: gameOverText, alpha: 1, duration, ease: 'Power2' });
+  this.tweens.add({ targets: restartText, alpha: 1, duration, ease: 'Power2' });
+
   this.input.once('pointerdown', () => startGame.call(this));
 }
 

@@ -1,9 +1,8 @@
-// index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nightmare Collector</title>
   <style>
     body {
@@ -25,10 +24,21 @@
       cursor: pointer;
       z-index: 10;
     }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      transition: opacity 1s ease;
+      z-index: 5;
+    }
   </style>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="overlay"></div>
   <button id="startButton">Start Game</button>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <script src="game.js"></script>
