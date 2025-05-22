@@ -38,7 +38,6 @@ function preload() {
   this.load.image('samsam', 'assets/samsam.png');
   this.load.image('godcandle', 'assets/godcandle.png');
   this.load.image('arrow', 'assets/arrow.png');
-
 }
 
 function create() {
@@ -70,6 +69,7 @@ function create() {
     child.setVelocityY(100 * baseScale);
     child.setScale(baseScale * 0.03);
     child.body.enable = false;
+    child.setActive(false).setVisible(false);
   });
 
   nightmares = this.physics.add.group({
@@ -81,14 +81,15 @@ function create() {
     child.setVelocityY(120 * baseScale);
     child.setScale(baseScale * 0.03);
     child.body.enable = false;
+    child.setActive(false).setVisible(false);
   });
 
   this.physics.add.overlap(player, orbs, collectOrb, null, this);
   this.physics.add.overlap(player, nightmares, hitNightmare, null, this);
 
   const fontSize = Math.floor(20 * baseScale) + 'px';
-  scoreText = this.add.text(16 * baseScale, 16 * baseScale, 'Score: 0', { fontSize, fill: '#fff' });
-  livesText = this.add.text(16 * baseScale, 40 * baseScale, `Lives: ${lives}`, { fontSize, fill: '#fff' });
+  scoreText = this.add.text(16 * baseScale, 16 * baseScale, 'Score: 0', { fontSize, fill: '#fff' }).setVisible(false);
+  livesText = this.add.text(16 * baseScale, 40 * baseScale, `Lives: ${lives}`, { fontSize, fill: '#fff' }).setVisible(false);
   highScoreText = this.add.text(16 * baseScale, 64 * baseScale, `High Score: ${highScore}`, { fontSize, fill: '#fff' });
 
   const startButton = document.getElementById('startButton');
@@ -154,9 +155,9 @@ function startGame() {
   scoreText.setText('Score: 0').setVisible(true);
   livesText.setText('Lives: 3').setVisible(true);
 
-  gameOverText.setVisible(false);
-  restartText.setVisible(false);
-  endGameOverlay.setVisible(false);
+  gameOverText.setVisible(false).setAlpha(0);
+  restartText.setVisible(false).setAlpha(0);
+  endGameOverlay.setVisible(false).setAlpha(0);
   this.backArrow.setVisible(false);
 
   const width = this.sys.game.config.width;
@@ -170,8 +171,6 @@ function startGame() {
   targetX = player.x;
   targetY = player.y;
 }
-
-
 
 function update() {
   if (!gameStarted) return;
@@ -214,8 +213,16 @@ function endGame() {
   gameStarted = false;
   player.setActive(false).setVisible(false);
   player.body.enable = false;
-  orbs.children.iterate(orb => orb.body.enable = false);
-  nightmares.children.iterate(child => child.body.enable = false);
+
+  orbs.children.iterate(orb => {
+    orb.setActive(false).setVisible(false);
+    orb.body.enable = false;
+  });
+
+  nightmares.children.iterate(child => {
+    child.setActive(false).setVisible(false);
+    child.body.enable = false;
+  });
 
   if (score > highScore) {
     highScore = score;
@@ -234,45 +241,41 @@ function endGame() {
 
   this.backArrow.setVisible(true);
   this.backArrow.once('pointerdown', () => {
+    // Reset to start menu state
     gameStarted = false;
-  
-    // Hide player and disable physics to "pause"
-    player.setVisible(false);
+
+    player.setActive(false).setVisible(false);
     player.body.enable = false;
-  
-    // Hide orbs and disable physics bodies
+
     orbs.children.iterate(orb => {
-      orb.setVisible(false);
+      orb.setActive(false).setVisible(false);
       orb.body.enable = false;
     });
-  
+
     nightmares.children.iterate(nm => {
-      nm.setVisible(false);
+      nm.setActive(false).setVisible(false);
       nm.body.enable = false;
     });
-  
-    // Show start menu UI
-    endGameOverlay.setVisible(true);
-    document.getElementById('startButton').style.display = 'block';
-  
-    // Hide game over and restart texts
-    gameOverText.setVisible(false);
-    restartText.setVisible(false);
-  
-    // Hide back arrow
+
+    endGameOverlay.setVisible(false).setAlpha(0);
+    gameOverText.setVisible(false).setAlpha(0);
+    restartText.setVisible(false).setAlpha(0);
     this.backArrow.setVisible(false);
-  
-    // Keep scoreText and livesText visible or hidden based on preference
-    // For example, you can keep them visible:
-    // scoreText.setVisible(true);
-    // livesText.setVisible(true);
+
+    document.getElementById('startButton').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('overlay').style.opacity = 1;
+
+    scoreText.setVisible(false);
+    livesText.setVisible(false);
   });
-  
 
-   
-
-
-  this.input.once('pointerdown', () => startGame.call(this));
+  // Allow restart by clicking anywhere on game canvas (optional)
+  this.input.once('pointerdown', () => {
+    if (!gameStarted) {
+      startGame.call(this);
+    }
+  });
 }
 
 function hitNightmare(player, nightmare) {
