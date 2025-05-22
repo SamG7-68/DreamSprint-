@@ -34,14 +34,16 @@ let background;
 
 let gameStarted = false;
 
-let targetPos = null; // New: where player moves toward
-
 const game = new Phaser.Game(config);
 
 // Handle window resize to resize game canvas
 window.addEventListener('resize', () => {
   game.scale.resize(window.innerWidth, window.innerHeight);
 });
+
+// Prevent default scrolling on touch for Safari and mobile browsers
+document.body.style.touchAction = 'none'; // CSS equivalent for touch-action: none
+document.body.style.overflow = 'hidden';
 
 function preload() {
   this.load.image('deathcandle', 'assets/deathcandle.png'); // 64x64
@@ -71,9 +73,6 @@ function create() {
   player.setActive(false).setVisible(false);
   player.body.enable = false;
 
-  // Remove keyboard input
-  // cursors = this.input.keyboard.createCursorKeys();
-
   // Create orbs (good)
   orbs = this.physics.add.group({
     key: 'godcandle',
@@ -83,7 +82,7 @@ function create() {
 
   orbs.children.iterate(function (child) {
     child.setVelocityY(100 * baseScale);
-    child.setScale(baseScale * 0.03);
+    child.setScale(baseScale*0.03);
     child.body.enable = false;
   });
 
@@ -131,6 +130,19 @@ function create() {
     startGame.call(this);
   });
 
+  // Add pointermove and touchmove listeners for player follow control
+  this.input.on('pointermove', pointer => {
+    if (!gameStarted) return;
+    player.x = Phaser.Math.Clamp(pointer.x, player.displayWidth/2, width - player.displayWidth/2);
+    player.y = Phaser.Math.Clamp(pointer.y, player.displayHeight/2, height - player.displayHeight/2);
+  });
+
+  this.input.on('touchmove', pointer => {
+    if (!gameStarted) return;
+    player.x = Phaser.Math.Clamp(pointer.x, player.displayWidth/2, width - player.displayWidth/2);
+    player.y = Phaser.Math.Clamp(pointer.y, player.displayHeight/2, height - player.displayHeight/2);
+  });
+
   // End game overlay and texts
   endGameOverlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7).setVisible(false);
 
@@ -144,20 +156,6 @@ function create() {
     fontSize: Math.floor(24 * baseScale) + 'px',
     fill: '#ffffff',
   }).setOrigin(0.5).setVisible(false);
-
-  // New: Pointer events for following touch/mouse
-  this.input.on('pointerdown', (pointer) => {
-    targetPos = { x: pointer.x, y: pointer.y };
-  });
-  this.input.on('pointermove', (pointer) => {
-    if (pointer.isDown) {
-      targetPos = { x: pointer.x, y: pointer.y };
-    }
-  });
-  this.input.on('pointerup', () => {
-    targetPos = null;
-    player.setVelocity(0);
-  });
 }
 
 function startGame() {
@@ -182,8 +180,6 @@ function startGame() {
   gameOverText.setVisible(false);
   restartText.setVisible(false);
   endGameOverlay.setVisible(false);
-
-  targetPos = null; // Reset target position at game start
 }
 
 function update() {
@@ -194,27 +190,8 @@ function update() {
 
   background.tilePositionY -= 1;
 
-  const baseScale = Math.min(width / 800, height / 600);
-  const speed = 300 * baseScale;
-
-  if (targetPos) {
-    const distX = targetPos.x - player.x;
-    const distY = targetPos.y - player.y;
-    const distance = Math.sqrt(distX * distX + distY * distY);
-
-    if (distance > 5) { // threshold to avoid jitter
-      const dirX = distX / distance;
-      const dirY = distY / distance;
-      player.setVelocity(dirX * speed, dirY * speed);
-
-      // Flip player based on movement direction
-      player.setFlipX(dirX < 0);
-    } else {
-      player.setVelocity(0);
-    }
-  } else {
-    player.setVelocity(0);
-  }
+  // We don't need keyboard control velocity anymore since player follows touch
+  player.setVelocity(0);
 
   // Recycle orbs when off screen
   orbs.children.iterate(function (orb) {
@@ -270,8 +247,6 @@ function endGame() {
   this.input.once('pointerdown', () => {
     startGame.call(this);
   });
-
-  targetPos = null; // Reset target on game over
 }
 
 function hitNightmare(player, nightmare) {
