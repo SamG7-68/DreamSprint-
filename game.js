@@ -80,7 +80,7 @@ function create() {
 
   orbs.children.iterate(function (child) {
     child.setVelocityY(100 * baseScale);
-    child.setScale(baseScale);
+    child.setScale(baseScale*0.03);
     child.body.enable = false;
   });
 
